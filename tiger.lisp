@@ -1207,18 +1207,13 @@
 
 (defstruct part comdata comlen points style end)
 
+
 (defun part-make (data)
   (make-part :comlen (length (first data))
-	     :comdata (cffi:foreign-alloc :uint8 :initial-contents (first data))
-	     :points (cffi:foreign-alloc :float :initial-contents (second data))
-	     :style (cffi:foreign-alloc :float :initial-contents (third data))
+	     :comdata (vg:malloc :uint8 (first data))
+	     :points (vg:malloc :float  (second data))
+	     :style (vg:malloc :float (third data))
 	     :end (fourth data)))
-
-(defun part-free (part)
-  (with-slots (comdata points style) part
-    (cffi:foreign-free comdata)
-    (cffi:foreign-free points)
-    (cffi:foreign-free style)))
 
 
 (defun tiger-parts ()
@@ -1226,9 +1221,7 @@
      for i from 0
      do (setf (aref *tiger-parts* i) (part-make datum))))
 
-(defun tiger-parts-free ()
-    (loop for part across *tiger-parts* do
-	 (part-free part)))
+
 (defparameter *tiger-paths* (make-array 240))
 
 (defparameter *tiger-stroke* nil)
@@ -1247,7 +1240,7 @@
 	 (let ((temp (starky::new-path)))
 	   (vg:clear-path temp vg:path-capability-all)
 	   (vg:append-path-data temp comlen comdata points)
-	   #||   (let ((path (vg:create-path vg:path-format-standard
+	     #||   (let ((path (vg:create-path vg:path-format-standard
 	   vg:path-datatype-f
 	   1.0 0.0
 	   0 0
@@ -1303,7 +1296,7 @@
  ;; (vg:flush)
  ;; (egl:swap-buffers native::*surface*)
   )
-
+()
 (defun tiger-in ()
   (starky::tin)
   (tiger-parts)
@@ -1312,56 +1305,40 @@
 
 (defun tiger-out ()
   (ev-close)
-  (tiger-paths-free)
-  (tiger-parts-free)
+  (vg:handles-free)
+  (vg:mallocs-free)
+  (setf *tiger-paths* nil)
+  (setf *tiger-parts* nil)
   (starky::tout))
 
 (defparameter *ra* nil)
-(defun tiger-test ()
-  (mm)
-
-  (setf *mouse-right* 0)
-  (loop for q =  (mm)
-     for radius = 280.0 then (* radius 0.99)
-     until (> *mouse-right* 0)  do
-       (setf *ra* radius)
-       (starky::start 1920 1080)
-;;       (starky::bgr (0.0 0.1 0.1 1.0))
-
-            
-
-       (starky::with-vec (v '(10.0 10.0 100.0 200.0))
-	 (starky::with-vec (stops '(0.0  0.15882353 0.2137255 0.16862746 1.0 
-				    0.5  0.10392157 0.1372549 0.2254902  1.0 
-				    1.0  0.11764706 0.1882353 0.19607843 1.0 ))
-	   
-	   (starky::fill-radial-gradient 600.0 300.0 500.0 300.0 radius stops 3)
-	   (starky::rect 0.0 0.0 1920.0 1080.0)))
-       (tiger-display (float  *mouse-x*) (float *mouse-y*) 1.0 (float *mouse-wheel*))
-       (starky::end))
-)
 
 (defun tiger-test ()
-  (mm)
 
+  
+  (mm)
   (setf *mouse-right* 0)
   (let (;;(v #{10.0 10.0 100.0 200.0})
+	
 	(stops #{0.0  0.15882353 0.2137255 0.16862746 1.0 
 	       0.5  0.10392157 0.1372549 0.2254902  1.0 
 	       1.0  0.11764706 0.1882353 0.19607843 1.0 }))
     (loop for q =  (mm)
        for radius = 280.0 then (* radius 0.99)
        until (> *mouse-right* 0)  do
-	 (setf *ra* radius)
-	 (starky::start 1920 1080)
-       ;;       (starky::bgr (0.0 0.1 0.1 1.0))
+	 ( let ((handles (vg:handles-currently)))
+	   (setf *ra* radius)
+	   (starky::start 1920 1080)
+	   ;;       (starky::bgr (0.0 0.1 0.1 1.0))
 
-	 (starky::fill-radial-gradient 600.0 300.0 500.0 300.0 radius stops 3)
-	 (starky::rect 0.0 0.0 1920.0 1080.0)
-	 (tiger-display (float  *mouse-x*) (float *mouse-y*) 1.0 (float *mouse-wheel*))
-	 (starky::end)))
+	   (starky::fill-radial-gradient 600.0 300.0 500.0 300.0 radius stops 3)
+	   (starky::rect 0.0 0.0 1920.0 1080.0)
+	   (tiger-display (float  *mouse-x*) (float *mouse-y*) 1.0 (float *mouse-wheel*))
+	   (starky::end)
+	   (format t "cleaned up ~A handles" (- (vg:handles-currently) handles))
+	   (vg:handles-free handles))
+	 ))
 )
-
 (defun tiger-test1 ()
   (starky::with-vec (scissor '(0 0 1920 1080))
     (vg:set-i vg:scissoring 1)
