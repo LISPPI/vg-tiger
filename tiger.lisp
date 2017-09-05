@@ -1341,6 +1341,27 @@
        (starky::end))
 )
 
+(defun tiger-test ()
+  (mm)
+
+  (setf *mouse-right* 0)
+  (let (;;(v #{10.0 10.0 100.0 200.0})
+	(stops #{0.0  0.15882353 0.2137255 0.16862746 1.0 
+	       0.5  0.10392157 0.1372549 0.2254902  1.0 
+	       1.0  0.11764706 0.1882353 0.19607843 1.0 }))
+    (loop for q =  (mm)
+       for radius = 280.0 then (* radius 0.99)
+       until (> *mouse-right* 0)  do
+	 (setf *ra* radius)
+	 (starky::start 1920 1080)
+       ;;       (starky::bgr (0.0 0.1 0.1 1.0))
+
+	 (starky::fill-radial-gradient 600.0 300.0 500.0 300.0 radius stops 3)
+	 (starky::rect 0.0 0.0 1920.0 1080.0)
+	 (tiger-display (float  *mouse-x*) (float *mouse-y*) 1.0 (float *mouse-wheel*))
+	 (starky::end)))
+)
+
 (defun tiger-test1 ()
   (starky::with-vec (scissor '(0 0 1920 1080))
     (vg:set-i vg:scissoring 1)
