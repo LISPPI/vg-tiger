@@ -1233,6 +1233,7 @@
 ;;  (vg:translate -200.0 200.0)
   (vg:scale 1.0 -1.0)
 
+  (format t "handles: ~A~&" (vg:handles-currently))
   (loop for part across *tiger-parts*
      for i from 0
      do
@@ -1251,7 +1252,7 @@
 	   ;;	       (vg:transform-path path temp)
 	   (format t "~A ~A~&"i (vg:error-msg (vg:get-error)))
 	   (setf (aref *tiger-paths* i) temp))))
-  
+  (format t "2handles: ~A~&" (vg:handles-currently))
   (setf *tiger-stroke* (vg:create-paint)
 	*tiger-fill* (vg:create-paint))
   (vg:set-paint *tiger-stroke* vg:STROKE-PATH)
@@ -1278,7 +1279,7 @@
   )
 (defun tiger-display (x y &optional (scale 1.0) (rot 1.0))
 ;  (starky::start 1920 1080)
-  
+  (format t "3handles: ~A~&" (vg:handles-currently))
   (vg:translate x y)
   (vg:rotate rot)
   (vg:translate -100.0 -100.0)
@@ -1291,6 +1292,7 @@
   (vg:set-parameter-i *tiger-fill* vg:PAINT-TYPE vg:PAINT-TYPE-COLOR )
 
   (loop  for i from 0 to 239 do    (tiger-display-part i) )
+  (format t "4handles: ~A~&" (vg:handles-currently))
   ;;(tiger-display-part i)
 
  ;; (vg:flush)
@@ -1309,10 +1311,15 @@
   (vg:mallocs-free)
   (setf *tiger-paths* nil)
   (setf *tiger-parts* nil)
-  (starky::tout))
+  (starky::tout)
+  )
 
 (defparameter *ra* nil)
 
+(defparameter *stops*
+  {0.0  0.15882353 0.2137255 0.16862746 1.0 
+  0.5  0.10392157 0.1372549 0.2254902  1.0 
+  1.0  0.11764706 0.1882353 0.19607843 1.0 })
 (defun tiger-test ()
 
   
@@ -1320,25 +1327,28 @@
   (setf *mouse-right* 0)
   (let (;;(v #{10.0 10.0 100.0 200.0})
 	
-	(stops {0.0  0.15882353 0.2137255 0.16862746 1.0 
-	       0.5  0.10392157 0.1372549 0.2254902  1.0 
-	       1.0  0.11764706 0.1882353 0.19607843 1.0 }))
+	)
     (loop for q =  (mm)
        for radius = 280.0 then (* radius 0.99)
        until (> *mouse-right* 0)  do
-	 ( let ((handles (vg:handles-currently)))
-	   (setf *ra* radius)
-	   (starky::start 1920 1080)
-	   ;;       (starky::bgr (0.0 0.1 0.1 1.0))
+	 (vg:with-handles
+	   (vg:with-mallocs 
+	     ;;(let ((handles (vg:handles-currently))))
+	     (setf *ra* radius)
+	     (starky::start 1920 1080)
+	     ;;       (starky::bgr (0.0 0.1 0.1 1.0))
 
-	   (starky::fill-radial-gradient 600.0 300.0 500.0 300.0 radius stops 3)
-	   (starky::rect 0.0 0.0 1920.0 1080.0)
-	   (tiger-display (float  *mouse-x*) (float *mouse-y*) 1.0 (float *mouse-wheel*))
-	   (starky::end)
-	   (format t "cleaned up ~A handles" (- (vg:handles-currently) handles))
-	   (vg:handles-free handles))
+
+	     (starky::fill-radial-gradient 600.0 300.0 500.0 300.0 radius *stops* 3)
+	     (starky::rect 0.0 0.0 1920.0 1080.0)
+	     (tiger-display (float  *mouse-x*) (float *mouse-y*) 1.0 (float *mouse-wheel*))
+	     (starky::end))
+;;	   (format t "cleaned up ~A handles" (- (vg:handles-currently) vg:handles-currently))
+	   ;;(vg:handles-free handles)
+	   )
 	 ))
 )
+#||
 (defun tiger-test1 ()
   (starky::with-vec (scissor '(0 0 1920 1080))
     (vg:set-i vg:scissoring 1)
@@ -1367,4 +1377,4 @@
 	       rot (+ rot inc-rot)
 	       scale (+ scale inc-scale)))))
 
-  
+  ||#
