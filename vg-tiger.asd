@@ -5,8 +5,9 @@
   :author "StackSmith <fpgasm@apple2.x10.mx>"
   :license "BSD 3-clause license"
   :serial t
-  :depends-on (:bordeaux-threads :starky :cffi)
+  :depends-on (:lisppi-mouse :starky :cffi)
   :components ((:file "package")
-	       (:file "mouse")
+;;	       (:file "mouse")
+	       (:file "tiger-data-list")
 	       (:file "tiger")))
 
